@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { codeToHtml } from "shiki";
 import CodeBlock from "./CodeBlock";
 import ReactMarkdown from "react-markdown";
-
 function cleanDisplayText(text) {
   if (!text) return "";
 
@@ -44,6 +43,7 @@ function HighlightedCode({ code }) {
     />
   );
 }
+
 
 function MessageBubble({ msg, index }) {
   const isRight = index % 2 !== 0;
@@ -191,4 +191,125 @@ function TypingIndicator({ agent, isRight }) {
   );
 }
 
+export default function App() {
+  const [messages, setMessages] = useState([]);
+  const [code, setCode] = useState("");
+  const [isDiscussionActive, setIsDiscussionActive] = useState(false);
+  const [typingAgent, setTypingAgent] = useState("");
+  const messagesEndRef = useRef(null);
+  const [isHovering, setIsHovering] = useState(false);
+  useEffect(() => {
+  const handler = (event) => {
+    const msg = event.data;
 
+    if (msg.command === "appendMessage") {
+
+      setTypingAgent(
+        msg.data.agent === "Architect"
+        ? "Critic"
+        : "Architect"
+      );
+
+      setMessages(prev => [...prev, msg.data]);
+      
+    }
+
+    if (msg.command === "discussionFinished") {
+        setIsDiscussionActive(false);
+    }
+
+    if (msg.command === "setCode") {
+        setCode(msg.data);
+    }
+
+  };
+
+  window.addEventListener("message", handler);
+
+
+  window.vscode?.postMessage({
+    command: "webviewReady"
+  });
+
+
+  return () => {
+    window.removeEventListener("message", handler);
+  };
+}, []);
+
+useEffect(() => {
+  if (!isDiscussionActive || isHovering) return;
+
+  window.requestAnimationFrame(() => {
+  messagesEndRef.current?.scrollIntoView({
+    behavior: "smooth",
+    block: "end",
+  });
+});
+
+
+}, [messages, isDiscussionActive, isHovering]);
+ 
+
+  return (
+
+    <div className="min-h-screen bg-gradient-to-b from-[#0B0F14] via-[#0D131B] to-[#0B0F14] text-[#E5E7EB] flex justify-center p-6">
+      
+      <div className="w-full max-w-3xl relative">
+  
+        {/* Ambient Glow */}
+        <div className="absolute inset-0 -z-10 flex justify-center">
+          <div className="w-[90%] h-[70%] translate-y-10 bg-gradient-radial from-[#1a2330]/50 via-[#0D131B]/20 to-transparent blur-[120px] opacity-70"></div>
+        </div>
+        
+        <div className="text-center mb-8 opacity-80">
+          CouncilOS
+        </div>
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={() => {
+              setIsDiscussionActive(true);
+              window.vscode.postMessage({
+                command: "startCouncil"
+              });
+            }}
+            className="
+              px-5 py-2.5
+              rounded-xl
+              bg-gradient-to-b from-[#2B3440] to-[#1D2530]
+              border border-white/5
+              text-sm text-[#E5E7EB]
+              shadow-[0_10px_30px_rgba(0,0,0,0.45)]
+              hover:from-[#364152] hover:to-[#273244]
+              transition-all duration-200
+            "
+          >
+            Start Council
+          </button>
+        </div>
+
+        <CodeBlock code={code} />
+
+        <div
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
+          {messages.map((msg, i) => (
+          <MessageBubble key={i} msg={msg} index={i} />
+        ))}
+
+          {isDiscussionActive && (
+           <TypingIndicator
+            agent={typingAgent || "Council"}
+            isRight={messages.length % 2 !== 0}
+          />
+
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+      </div>
+    </div>
+  );
+}
