@@ -673,3 +673,97 @@ async function callCritic({ prompt }) {
 
      return "⚠️ Failed to generate response";
 }
+
+
+async function callAnalyzer({ prompt }) {
+    return await callCritic({ prompt }); 
+}
+
+async function callQWEN({ prompt }) {
+
+    let attempts = 0;
+
+    while (attempts < 3) {
+
+          // 🔥 PRE-REQUEST DELAY (prevents 429)
+        await new Promise(r => setTimeout(r, 1000));
+    
+        try {
+
+            console.log(`Calling QWEN (PRIMARY Architect) Attempt ${attempts + 1}`);
+
+            const response = await fetch(
+                "https://api.groq.com/openai/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: "qwen/qwen3-32b",
+                        temperature: 0.5,
+                        messages: [
+                            {
+
+                                 role: "user",
+                                content: prompt
+                          
+                            }
+                        ]
+                    })
+                }
+            );
+
+            console.log("QWEN STATUS:", response.status);
+
+            if (response.status === 429 || response.status === 503) {
+                attempts++;
+                const delay = 2000 * attempts;
+                await new Promise(r => setTimeout(r, delay));
+                continue;
+            }
+
+            if (!response.ok) {
+                throw new Error(`QWEN failed: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log("QWEN RAW:", data);
+            console.log("QWEN ERROR CHECK:", data);
+
+            let text = data.choices?.[0]?.message?.content || "";
+
+            text = text
+                .replace(/\\n/g, '\n')
+                .replace(/\*\*/g, '')
+                .replace(/#/g, '')
+                .trim();
+
+            if (!text) {
+                attempts++;
+                continue;
+            }
+
+            return text;
+
+        } catch (err) {
+            attempts++;
+            if (attempts >= 3) {
+                console.log("QWEN final failure:", err.message);
+                return "";
+            }
+
+            const delay = 2000 * attempts;
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+
+    return "";
+}
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`Council backend running on port ${PORT}`);
+});
