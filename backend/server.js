@@ -611,3 +611,65 @@ ${architectText}
         res.end();
     }
 });
+
+async function callCritic({ prompt }) {
+
+    let attempts = 0;
+
+    while (attempts < 3) {
+
+          // 🔥 PRE-REQUEST DELAY (prevents 429)
+        await new Promise(r => setTimeout(r, 1000));
+
+        try {
+
+            const response = await fetch(
+                "https://api.groq.com/openai/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                    model: "llama-3.1-8b-instant",
+                    temperature: 0.2,
+                    messages: [{ role: "user", content: prompt }]
+                })
+            }
+        );
+
+         // ✅ retry first
+        if (response.status === 429 || response.status === 503) {
+            attempts++;
+            const delay = 2000 * attempts;
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+        }
+
+        if (!response.ok) {
+            throw new Error(`Critic API failed: ${response.status}`);
+        }
+
+
+        const data = await response.json();
+
+        let text = data.choices?.[0]?.message?.content || "No response";
+
+        text = text
+            .replace(/\\n/g, '\n')
+            .replace(/\*\*/g, '')
+            .trim();
+
+        return text;
+    } catch (err) {
+            attempts++;
+            if (attempts >= 3) throw err;
+
+            const delay = 2000 * attempts;
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+
+     return "⚠️ Failed to generate response";
+}
