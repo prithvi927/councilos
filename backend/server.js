@@ -108,3 +108,240 @@ async function cleanSemantic(text) {
     }
 return finalLines.join('\n');
 }
+
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+
+console.log("DEBATE ROUTE LOADED");
+app.post('/debate', async (req, res) => {
+
+    try {
+
+        await initEmbedder();
+        const { code, intent } = req.body;
+
+        let history = [];
+        let analysis = await callAnalyzer({
+            prompt: `
+
+        Look at this code.  
+
+        List ALL potential issues you can find.
+
+        Include runtime bugs, logical issues, edge cases, and incorrect assumptions.
+        Do not explain deeply — focus on coverage.
+        Be exhaustive.
+
+
+        Code:
+        ${code}
+
+        `
+    });
+
+        analysis = analysis || "";
+        analysis = await cleanSemantic(analysis);
+
+        history.push({
+        agent: "Analyzer",
+        content: analysis
+    });
+
+// 🔥 CONFLICT PHASE
+
+        let architectReply = await callQWEN({
+            prompt: `
+You are reviewing an existing analysis of the code.
+
+Before responding, quickly re-check the code yourself.
+Do not completely rely only on the existing analysis as it can be wrong.
+
+You are absolutely free to form your own opinion and analysis based of the existing analysis and the code
+
+
+Respond primarily if:
+- you disagree
+- something feels wrong
+- something important is missing
+- you notice a new issue not mentioned yet
+
+If they are right → acknowledge briefly.
+
+
+
+Code:
+${code}
+
+Other opinion:
+${analysis}
+`
+});
+        let architectReplyText = architectReply || "";
+        architectReplyText = await cleanSemantic(architectReplyText);
+
+        history.push({
+            agent: "Architect",
+            content: architectReplyText,
+});
+
+        let criticReply = await callCritic({
+            prompt: `
+You are reviewing an existing analysis of the code.
+
+Before responding, quickly re-check the code yourself.
+Do not completely rely only on the existing analysis as it can be wrong.
+
+You are absolutely free to form your own opinion and analysis based of the existing analysis and the code
+
+
+Respond primarily if:
+- you disagree
+- something feels wrong
+- something important is missing
+- you notice a new issue not mentioned yet
+
+If they are right → acknowledge briefly.
+
+
+Code:
+${code}
+
+Other opinion:
+${analysis}
+`
+});
+
+        criticReply = await cleanSemantic(criticReply);
+
+        // 🧾 Save critic response
+        history.push({ agent: "Critic", content: criticReply });
+
+        // 🔁 DYNAMIC BACK-AND-FORTH LOOP (REPLACE OLD LOGIC)
+
+        let maxTurns = 3; // prevents infinite loops
+        let turn = 0;
+
+        let lastCritic = criticReply;
+
+        while (turn < maxTurns) {
+
+            const isClear = (lastCritic || "").toUpperCase().includes("[CLEAR]");
+            if (isClear) break;
+
+            // 🧠 Architect replies to Critic
+            let architectFollow = await callQWEN({
+                prompt: `
+Continue the discussion.
+
+Before responding, quickly re-check the code yourself.
+Do not rely only on the other opinion.
+
+Respond freely — do not hold back your reasoning.
+
+- If you disagree → explain why clearly
+- If you agree → confirm, but only after re-checking the code
+- If something is still unclear → point it out
+
+Before accepting any claim:
+
+Try to DISPROVE it.
+
+- Identify the exact condition where the issue would occur
+- Check if that condition is actually possible in the code
+
+If you cannot find a real execution path where it fails → reject the claim.
+
+If you believe a bug exists, show the exact execution path where it fails.
+
+Do not accept a claim just because it sounds plausible.
+
+Only conclude with [CLEAR] if you are confident after attempting to disprove all remaining claims
+and the reasoning is correct based on the code execution.
+
+
+Code:
+${code}
+
+Other message:
+${lastCritic}
+`
+    });
+
+    let architectText = architectFollow || "";
+    architectText = await cleanSemantic(architectText);
+
+    history.push({
+        agent: "Architect",
+        content: architectText
+    });
+
+    // 🔍 Critic replies again
+    let criticFollow = await callCritic({
+        prompt: `
+
+Continue the discussion.
+
+Before responding, quickly re-check the code yourself.
+Do not rely only on the other opinion.
+
+Respond freely — do not hold back your reasoning.
+
+- If you disagree → explain why clearly
+- If you agree → confirm, but only after re-checking the code
+- If something is still unclear → point it out
+
+Before accepting any claim:
+
+Try to DISPROVE it.
+
+- Identify the exact condition where the issue would occur
+- Check if that condition is actually possible in the code
+
+If you cannot find a real execution path where it fails → reject the claim.
+
+If you believe a bug exists, show the exact execution path where it fails.
+
+Do not accept a claim just because it sounds plausible.
+
+Only conclude with [CLEAR] if you are confident after attempting to disprove all remaining claims
+and the reasoning is correct based on the code execution.
+
+
+Code:
+${code}
+
+Other message:
+${architectText}
+`
+    });
+
+    lastCritic = await cleanSemantic(criticFollow || "");
+
+    history.push({
+        agent: "Critic",
+        content: lastCritic
+    });
+
+    turn++;
+}
+        
+        return res.json({
+            success: true,
+            debate: history
+        });
+
+    } catch (err) {
+        console.error("DEBATE ERROR:", err.message);
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+
+});
+
+    
