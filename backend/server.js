@@ -126,7 +126,7 @@ app.post('/debate', async (req, res) => {
         const { code, intent } = req.body;
 
         let history = [];
-        let analysis = await callLLAMA({
+        let analysis = await callANALYZER({
             prompt: `
 
         Look at this code.  
@@ -367,7 +367,7 @@ app.post('/debate-stream', async (req, res) => {
         let history = [];
 
         // 🧠 LLAMA (Round 1)
-        let analysis = await callLLAMA({
+        let analysis = await callANALYZER({
             prompt: `
 
         Look at this code.
@@ -677,7 +677,7 @@ async function callLLAMA({ prompt }) {
 }
 
 
-async function callLLAMA({ prompt }) {
+async function callANALYZER({ prompt }) {
     return await callLLAMA({ prompt }); 
 }
 
