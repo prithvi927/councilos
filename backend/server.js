@@ -1,4 +1,6 @@
-const fetch = require('node-fetch');
+const fetch = (...args) =>
+  import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
 
 require('dotenv').config();
 
@@ -124,7 +126,7 @@ app.post('/debate', async (req, res) => {
         const { code, intent } = req.body;
 
         let history = [];
-        let analysis = await callAnalyzer({
+        let analysis = await callLLAMA({
             prompt: `
 
         Look at this code.  
@@ -146,13 +148,13 @@ app.post('/debate', async (req, res) => {
         analysis = await cleanSemantic(analysis);
 
         history.push({
-        agent: "Analyzer",
+        agent: "LLAMA",
         content: analysis
     });
 
 //  CONFLICT PHASE
 
-        let architectReply = await callQWEN({
+        let qwenReply = await callQWEN({
             prompt: `
 You are reviewing an existing analysis of the code.
 
@@ -179,15 +181,15 @@ Other opinion:
 ${analysis}
 `
 });
-        let architectReplyText = architectReply || "";
-        architectReplyText = await cleanSemantic(architectReplyText);
+        let qwenReplyText = qwenReply || "";
+        qwenReplyText = await cleanSemantic(qwenReplyText);
 
         history.push({
-            agent: "Architect",
-            content: architectReplyText,
+            agent: "QWEN",
+            content: qwenReplyText,
 });
 
-        let criticReply = await callCritic({
+        let llamaReply = await callLLAMA({
             prompt: `
 You are reviewing an existing analysis of the code.
 
@@ -214,25 +216,25 @@ ${analysis}
 `
 });
 
-        criticReply = await cleanSemantic(criticReply);
+        llamaReply = await cleanSemantic(llamaReply);
 
-        // 🧾 Save critic response
-        history.push({ agent: "Critic", content: criticReply });
+        // 🧾 Save llama response
+        history.push({ agent: "LLAMA", content: llamaReply });
 
         // 🔁 DYNAMIC BACK-AND-FORTH LOOP (REPLACE OLD LOGIC)
 
         let maxTurns = 3; // prevents infinite loops
         let turn = 0;
 
-        let lastCritic = criticReply;
+        let lastLLAMA = llamaReply;
 
         while (turn < maxTurns) {
 
-            const isClear = (lastCritic || "").toUpperCase().includes("[CLEAR]");
+            const isClear = (lastLLAMA || "").toUpperCase().includes("[CLEAR]");
             if (isClear) break;
 
-            // 🧠 Architect replies to Critic
-            let architectFollow = await callQWEN({
+            // 🧠 QWEN replies to LLAMA
+            let qwenFollow = await callQWEN({
                 prompt: `
 Continue the discussion.
 
@@ -266,20 +268,20 @@ Code:
 ${code}
 
 Other message:
-${lastCritic}
+${lastLLAMA}
 `
     });
 
-    let architectText = architectFollow || "";
-    architectText = await cleanSemantic(architectText);
+    let qwenText = qwenFollow || "";
+    qwenText = await cleanSemantic(qwenText);
 
     history.push({
-        agent: "Architect",
-        content: architectText
+        agent: "QWEN",
+        content: qwenText
     });
 
-    // 🔍 Critic replies again
-    let criticFollow = await callCritic({
+    // 🔍 LLAMA replies again
+    let llamaFollow = await callLLAMA({
         prompt: `
 
 Continue the discussion.
@@ -314,15 +316,15 @@ Code:
 ${code}
 
 Other message:
-${architectText}
+${qwenText}
 `
     });
 
-    lastCritic = await cleanSemantic(criticFollow || "");
+    lastLLAMA = await cleanSemantic(llamaFollow || "");
 
     history.push({
-        agent: "Critic",
-        content: lastCritic
+        agent: "LLAMA",
+        content: lastLLAMA
     });
 
     turn++;
@@ -364,8 +366,8 @@ app.post('/debate-stream', async (req, res) => {
 
         let history = [];
 
-        // 🧠 Analyzer (Round 1)
-        let analysis = await callAnalyzer({
+        // 🧠 LLAMA (Round 1)
+        let analysis = await callLLAMA({
             prompt: `
 
         Look at this code.
@@ -386,18 +388,18 @@ app.post('/debate-stream', async (req, res) => {
         analysis = await cleanSemantic(analysis);
 
         send({
-            agent: "Analyzer",
+            agent: "LLAMA",
             content: analysis
         });
 
         history.push({
-            agent: "Analyzer",
+            agent: "LLAMA",
             content: analysis
         });
 
 //  CONFLICT PHASE
 
-        let architectReply = await callQWEN({
+        let qwenReply = await callQWEN({
             prompt: `
 You are reviewing an existing analysis of the code.
 
@@ -425,16 +427,16 @@ ${analysis}
 
 `
 });
-        let architectReplyText = architectReply || "";
-        architectReplyText = await cleanSemantic(architectReplyText);
+        let qwenReplyText = qwenReply || "";
+        qwenReplyText = await cleanSemantic(qwenReplyText);
 
        send({
-            agent: "Architect",
-            content: architectReplyText
+            agent: "QWEN",
+            content: qwenReplyText
 });
-        history.push({ agent: "Architect", content: architectReplyText });
+        history.push({ agent: "QWEN", content: qwenReplyText });
 
-        let criticReply = await callCritic({
+        let llamaReply = await callLLAMA({
             prompt: `
 You are reviewing an existing analysis of the code.
 
@@ -460,16 +462,16 @@ ${analysis}
 `
 });
 
-        criticReply = criticReply || "";
-        criticReply = await cleanSemantic(criticReply);
+        llamaReply = llamaReply || "";
+        llamaReply = await cleanSemantic(llamaReply);
 
         send({
-            agent: "Critic",
-            content: criticReply
+            agent: "LLAMA",
+            content: llamaReply
 });
 
-        // 🧾 Save critic response
-        history.push({ agent: "Critic", content: criticReply });
+        // 🧾 Save llama response
+        history.push({ agent: "LLAMA", content: llamaReply });
 
 
         // 🔁 LIVE BACK-AND-FORTH LOOP
@@ -477,15 +479,15 @@ ${analysis}
         let maxTurns = 3; // prevents infinite loop
         let turn = 0;
 
-        let lastCritic = criticReply;
+        let lastLLAMA = llamaReply;
 
         while (turn < maxTurns) {
 
-            const isClear = (lastCritic || "").toUpperCase().includes("[CLEAR]");
+            const isClear = (lastLLAMA || "").toUpperCase().includes("[CLEAR]");
             if (isClear) break;
 
-            // 🧠 Architect responds
-            let architectFollow = await callQWEN({
+            // 🧠 QWEN responds
+            let qwenFollow = await callQWEN({
             prompt: `
 Continue the discussion.
 
@@ -523,28 +525,28 @@ Code:
 ${code}
 
 Other message:
-${lastCritic}
+${lastLLAMA}
 `
     });
 
-    let architectText = architectFollow || "";
-    architectText = await cleanSemantic(architectText);
+    let qwenText = qwenFollow || "";
+    qwenText = await cleanSemantic(qwenText);
 
-    // 📡 STREAM Architect response
+    // 📡 STREAM QWEN response
     send({
-        agent: "Architect",
-        content: architectText
+        agent: "QWEN",
+        content: qwenText
     });
 
     // 🧾 Save
     history.push({
-        agent: "Architect",
-        content: architectText
+        agent: "QWEN",
+        content: qwenText
     });
 
 
-    // 🔍 Critic responds again
-    let criticFollow = await callCritic({
+    // 🔍 LLAMA responds again
+    let llamaFollow = await callLLAMA({
         prompt: `
 Continue the discussion.
 
@@ -578,25 +580,25 @@ Code:
 ${code}
 
 Other message:
-${architectText}
+${qwenText}
 `
     });
 
-    let criticText = await cleanSemantic(criticFollow || "");
+    let llamaText = await cleanSemantic(llamaFollow || "");
 
-    // 📡 STREAM Critic response
+    // 📡 STREAM LLAMA response
     send({
-        agent: "Critic",
-        content: criticText
+        agent: "LLAMA",
+        content: llamaText
     });
 
     // 🧾 Save
     history.push({
-        agent: "Critic",
-        content: criticText
+        agent: "LLAMA",
+        content: llamaText
     });
 
-    lastCritic = criticText;
+    lastLLAMA = llamaText;
     turn++;
 }       
 
@@ -612,7 +614,7 @@ ${architectText}
     }
 });
 
-async function callCritic({ prompt }) {
+async function callLLAMA({ prompt }) {
 
     let attempts = 0;
 
@@ -648,7 +650,7 @@ async function callCritic({ prompt }) {
         }
 
         if (!response.ok) {
-            throw new Error(`Critic API failed: ${response.status}`);
+            throw new Error(`LLAMA API failed: ${response.status}`);
         }
 
 
@@ -675,8 +677,8 @@ async function callCritic({ prompt }) {
 }
 
 
-async function callAnalyzer({ prompt }) {
-    return await callCritic({ prompt }); 
+async function callLLAMA({ prompt }) {
+    return await callLLAMA({ prompt }); 
 }
 
 async function callQWEN({ prompt }) {
@@ -690,7 +692,7 @@ async function callQWEN({ prompt }) {
     
         try {
 
-            console.log(`Calling QWEN (PRIMARY Architect) Attempt ${attempts + 1}`);
+            console.log(`Calling QWEN (PRIMARY QWEN) Attempt ${attempts + 1}`);
 
             const response = await fetch(
                 "https://api.groq.com/openai/v1/chat/completions",
