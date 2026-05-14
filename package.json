@@ -9,15 +9,25 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "councilos.helloWorld",
-        "title": "Hello World"
+        
+        "command": "council.start",
+        "title": "Start Council"
       }
-    ]
+    ],
+
+    "menus": {
+      "editor/context": [
+        {
+          "command": "council.start",
+          "when": "editorHasSelection",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "lint": "eslint .",
@@ -30,7 +40,11 @@
     "@types/vscode": "^1.118.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
-    "eslint": "^9.39.3"
+    "autoprefixer": "^10.5.0",
+    "eslint": "^9.39.3",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.2.4"
+
   },
   "dependencies": {
     "@xenova/transformers": "^2.17.2",

@@ -205,9 +205,9 @@ export default function App() {
     if (msg.command === "appendMessage") {
 
       setTypingAgent(
-        msg.data.agent === "Architect"
-        ? "Critic"
-        : "Architect"
+        msg.data.agent === "LLAMA"
+        ? "QWEN"
+        : "LLAMA"
       );
 
       setMessages(prev => [...prev, msg.data]);
@@ -300,7 +300,7 @@ useEffect(() => {
 
           {isDiscussionActive && (
            <TypingIndicator
-            agent={typingAgent || "Council"}
+            agent={typingAgent || "LLAMA"}
             isRight={messages.length % 2 !== 0}
           />
 
