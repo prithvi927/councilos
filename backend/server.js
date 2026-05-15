@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const path = require("path");
 // const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // 🔥 EMBEDDING SETUP
@@ -763,6 +764,12 @@ async function callQWEN({ prompt }) {
 
     return "";
 }
+
+app.use(express.static(path.join(__dirname, "dist")));
+
+app.get("*", (_, res) => {
+    res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
 
 const PORT = process.env.PORT || 3000;
 

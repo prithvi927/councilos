@@ -206,7 +206,7 @@ export default function App() {
 
   try {
     const response = await fetch(
-      "http://localhost:3000/debate-stream",
+      "http://144.202.51.83:3000/debate-stream",
       {
         method: "POST",
         headers: {
