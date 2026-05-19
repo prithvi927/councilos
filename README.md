@@ -1,65 +1,202 @@
-# councilos README
 
-This is the README for your extension "councilos". After writing up a brief description, we recommend including the following sections.
+# CouncilOS
 
-## Features
+> Collaborative Multi-Agent Reasoning Platform
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+CouncilOS is a collaborative multi-agent reasoning platform that explores a more research-oriented alternative to traditional single-model AI workflows.
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+Instead of generating a single isolated response, multiple AI models engage in human-like discussions where they critique, challenge, verify, and refine each other’s reasoning dynamically in real time.
 
 ---
 
-## Working with Markdown
+# Vision
 
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
+Most AI systems today still operate primarily through isolated single-model outputs.
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
+CouncilOS explores a different direction:
 
-## For more information
+* Multiple AI models reasoning together
+* Human-like collaborative discussions
+* Iterative critique and refinement
+* Real-time evolving analysis
+* Multi-perspective reasoning workflows
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+The goal is to create a system where AI models continuously challenge, refine, and evolve reasoning together rather than operating independently.
 
-**Enjoy!**
+---
+
+# Features
+
+* Real-time collaborative AI discussions
+* Multi-model orchestration
+* Human-like reasoning workflows
+* Iterative critique loops
+* Semantic stabilization pipeline
+* Streaming responses
+* Live code analysis discussions
+* Research-oriented reasoning architecture
+* Model disagreement + refinement workflow
+* Deployed cloud backend infrastructure
+
+---
+
+# How It Works
+
+1. The user submits source code into the CouncilOS interface.
+2. The backend orchestration engine distributes the context to multiple AI models.
+3. Models analyze the same codebase simultaneously.
+4. Each model critiques, verifies, and responds to the reasoning of other models.
+5. The discussion evolves dynamically through iterative refinement.
+6. Semantic filtering helps stabilize repetitive reasoning patterns.
+7. Responses are streamed back live into the interface.
+
+This creates a collaborative reasoning workflow instead of a static single-model response.
+
+---
+
+# Current Implementation
+
+The current implementation focuses on collaborative code analysis using:
+
+* Llama 3.1
+* Qwen
+* Groq API
+* Real-time orchestration backend
+* Live streaming discussion pipeline
+
+---
+
+# Tech Stack
+
+## Frontend
+
+* React
+* Vite
+* JavaScript
+* CSS
+
+## Backend
+
+* Node.js
+* Express.js
+* REST API
+* PM2
+
+## Infrastructure
+
+* Vultr Cloud Deployment
+* GitHub
+
+## AI Models
+
+* Llama 3.1
+* Qwen
+* Groq API
+
+---
+
+# Architecture Overview
+
+```text
+User Code Input
+        ↓
+CouncilOS Orchestration Engine
+        ↓
+Llama ↔ Qwen Collaborative Discussion
+        ↓
+Critique → Verification → Refinement
+        ↓
+Semantic Stabilization Pipeline
+        ↓
+Live Streamed Multi-Agent Output
+```
+
+---
+
+# Research Direction
+
+CouncilOS is designed as a model-agnostic collaborative reasoning platform rather than a system tied to any single AI model.
+
+While the current implementation focuses on code analysis, the long-term vision extends toward a general-purpose collaborative reasoning infrastructure where multiple AI systems, specialized agents, and human participants can collaborate inside shared reasoning environments.
+
+Potential future applications include:
+
+* Software engineering
+* Cybersecurity analysis
+* Legal reasoning
+* Research workflows
+* Financial analysis
+* Scientific collaboration
+* Enterprise reasoning systems
+
+---
+
+# Deployment
+
+The project was deployed using:
+
+* Vultr Cloud Infrastructure
+* PM2 Process Management
+* Live backend orchestration server
+* Real-time streaming API architecture
+
+---
+
+# Demo
+
+Live Demo:
+
+```text
+http://144.202.51.83:3000/
+```
+
+---
+
+# Presentation
+
+The project presentation demonstrates:
+
+* Collaborative reasoning architecture
+* Multi-agent orchestration workflow
+* Human-like AI discussion system
+* Live deployment infrastructure
+* Real-time reasoning refinement
+
+---
+
+# Why CouncilOS?
+
+Single-model AI systems can sometimes:
+
+* Hallucinate
+* Miss edge cases
+* Produce shallow validation
+* Lack multi-perspective reasoning
+
+CouncilOS explores whether collaborative AI reasoning workflows can create more reliable and transparent analysis through structured disagreement and iterative refinement.
+
+---
+
+# Future Scope
+
+Future versions may include:
+
+* More AI models
+* Plug-and-play agent architecture
+* Specialized domain councils
+* Shared collaborative reasoning rooms
+* Human + AI collaborative discussions
+* Persistent reasoning memory
+* Autonomous verification agents
+
+---
+
+# Team
+
+Eclipse Lab
+
+---
+
+# License
+
+MIT License
